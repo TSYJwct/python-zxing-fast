@@ -1,18 +1,16 @@
 from __future__ import print_function
 import os
-import Image
-import StringIO
 import io
 
 
-def setup(classpath, java_home):
-    os.environ['JAVA_HOME'] = java_home
+def setup(classpath, java_home=None):
+    if java_home is not None:
+        os.environ['JAVA_HOME'] = java_home
+    # os.environ['CLASSPATH'] = classpath
+    # os.environ['PATH'] = "C:\Program Files\Java\jre1.8.0_74\bin\server;" + os.environ['PATH']
     import jnius_config
-    jnius_config.add_classpath(classpath)
-
-
-# runner = autoclass('com.google.zxing.client.j2se.CommandLineRunnerCustom')
-# runner.readFromFileSystem(['goal_qrcode.png'])
+    for i in classpath:
+        jnius_config.add_classpath(i)
 
 
 def read_tag(image):
@@ -26,13 +24,9 @@ def read_tag(image):
     ByteArrayInputStream = autoclass('java.io.ByteArrayInputStream')
     ImageIO = autoclass('javax.imageio.ImageIO')
     ByteBuffer = autoclass('java.nio.ByteBuffer')
-    CommandLineRunner = autoclass('com.google.zxing.client.j2se.CommandLineRunnerCustom')
-    # BufferedImageLuminanceSource = autoclass('com.google.zxing.BufferedImageLuminanceSource')
-    LuminanceSource = autoclass('com.google.zxing.LuminanceSource')
-    # HybridBinarizer = autoclass('com.google.zxing.HybridBinarizer')
-    Binarizer = autoclass('com.google.zxing.Binarizer')
+    BufferedImageLuminanceSource = autoclass('com.google.zxing.client.j2se.BufferedImageLuminanceSource')
+    HybridBinarizer = autoclass('com.google.zxing.common.HybridBinarizer')
     BinaryBitmap = autoclass('com.google.zxing.BinaryBitmap')
-    QRCodeReader = autoclass('com.google.zxing.qrcode.QRCodeReader')
     MultiFormatReader = autoclass('com.google.zxing.MultiFormatReader')
 
     byteArray = ByteBuffer.wrap(serialized_img)
@@ -42,15 +36,17 @@ def read_tag(image):
     imageInputStream = ImageIO.createImageInputStream(byteInputStream)
     bufferedImage = ImageIO.read(imageInputStream)
 
-    source = LuminanceSource(bufferedImage)
-    bitmap = BinaryBitmap(Binarizer(source))
+    source = BufferedImageLuminanceSource(bufferedImage)
+    bitmap = BinaryBitmap(HybridBinarizer(source))
     reader = MultiFormatReader()
 
     result = reader.decode(bitmap)
     text = result.getText()
-    return text
 
 
 
-
-
+class BarCode:
+    '''
+    Designed to be a drop-in replacement for the BarCode class provided by Python-Zxing
+    (github.com/oostendo/python-zxing)
+    '''
